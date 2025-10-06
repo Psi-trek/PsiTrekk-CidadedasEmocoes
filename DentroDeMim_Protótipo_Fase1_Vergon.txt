@@ -1,0 +1,149 @@
+// DentroDeMim_Protótipo_Fase1_Vergonha.jsx // Protótipo React (single-file) para rodar em navegador/tablet. // Instruções rápidas: // - Cole este arquivo em um projeto React (Vite/CRA) e importe/roteie como componente principal. // - Usa Tailwind CSS para estilos; se não tiver Tailwind, adapte as classes ou remova. // - Reproduz sons usando WebAudio (não depende de arquivos externos).
+
+import React, { useEffect, useState, useRef } from "react"; import { motion } from "framer-motion";
+
+export default function DentroDeMimPrototipo() { // Estado do protótipo const [step, setStep] = useState(0); // 0=intro,1=cenario,2=escolha,3=corpo,4=reflexao,5=conclusao const [selectedEmotion, setSelectedEmotion] = useState(null); const [explanation, setExplanation] = useState(""); const [scoreNote, setScoreNote] = useState(null); const audioCtxRef = useRef(null);
+
+useEffect(() => { // inicializa AudioContext quando usuário interagir pela primeira vez // (muitos navegadores bloqueiam autoplay) audioCtxRef.current = null; }, []);
+
+function playClick() { try { if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)(); const ctx = audioCtxRef.current; const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = "sine"; o.frequency.value = 600; g.gain.value = 0.02; o.connect(g); g.connect(ctx.destination); o.start(); setTimeout(() => { o.stop(); }, 80); } catch (e) { // falha silenciosa } }
+
+function playSoftChime() { try { if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)(); const ctx = audioCtxRef.current; const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = "triangle"; o.frequency.value = 880; g.gain.value = 0.02; o.connect(g); g.connect(ctx.destination); o.start(); const t = setTimeout(() => { o.frequency.value = 660; }, 160); setTimeout(() => { o.stop(); clearTimeout(t); }, 380); } catch (e) {} }
+
+const scenarioText = Você chega ao intervalo na escola e vê seu grupo de amigos rindo e cochichando. Um dos seus colegas olha na sua direção, sorri e continua conversando. Você sente que estão rindo de você.;
+
+const emotions = [ { id: "vergonha", label: "Vergonha", emoji: "😳", hint: "Quero desaparecer, sinto calor e rosto queimando." }, { id: "raiva", label: "Raiva", emoji: "😡", hint: "Quero responder, me sinto injustiçado." }, { id: "tristeza", label: "Tristeza", emoji: "😞", hint: "Sinto vontade de me recolher e chorar." }, { id: "ansiedade", label: "Ansiedade", emoji: "😰", hint: "Meu coração acelera, fico inquieto." }, { id: "indiferenca", label: "Indiferença", emoji: "😐", hint: "Acho que não ligo, finjo normalidade." } ];
+
+const bodyReactions = { vergonha: ["Rubor no rosto", "Olhar para baixo", "Falar baixo/engasgar"], raiva: ["Mandíbulas tensas", "Respiração curta", "Ficar vermelho"], tristeza: ["Olhos lacrimejantes", "Sono, falta de energia", "Ficar mais quieto"], ansiedade: ["Mãos trêmulas", "Borboletas no estômago", "Ficar inquieto"], indiferenca: ["Expressão neutra", "Mantém distância", "Pouca reação corporal"] };
+
+function handleStart() { playClick(); setStep(1); }
+
+function handleChoose(em) { playClick(); setSelectedEmotion(em); setStep(2); }
+
+function handleBodyChoice(reaction) { playClick(); setScoreNote("Ótimo — você associou uma reação corporal coerente."); setTimeout(() => { playSoftChime(); setStep(3); }, 600); }
+
+function handleExplain() { playClick(); // simples validação: se digitou algo, avança if (explanation.trim().length > 0) { setStep(4); // sugestão automática para a psicóloga setScoreNote( Sugestão para terapeuta: explore as sensações físicas e as evidências que levaram o adolescente a escolher '${selectedEmotion.label}'. ); } else { setScoreNote("Tente escrever ao menos uma frase — isso ajuda a reflexão."); } }
+
+function handleFinish() { playSoftChime(); setStep(5); }
+
+return ( <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-pink-50 p-6"> <div className="max-w-3xl w-full bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-6 md:p-10"> <header className="flex items-center justify-between mb-4"> <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Dentro de Mim — Fase 1: Vergonha</h1> <div className="text-sm opacity-80">Tablet — Sessão guiada</div> </header>
+
+{/* Conteúdo por passo */}
+    {step === 0 && (
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <p className="mb-6 text-gray-700">Neste protótipo, o objetivo é ajudar o adolescente a <strong>identificar</strong> e <strong>nomear</strong> a emoção que aparece em uma situação social.</p>
+        <div className="flex flex-col md:flex-row gap-4">
+          <button onClick={handleStart} className="px-6 py-3 bg-gradient-to-r from-pink-500 to-indigo-500 text-white rounded-xl font-semibold shadow-lg hover:scale-[1.01] active:scale-95">
+            Começar a Fase
+          </button>
+          <button onClick={() => { playSoftChime(); setScoreNote('Dica: peça ao adolescente para entrar no personagem e responder como se fosse ele.'); }} className="px-6 py-3 border border-indigo-100 rounded-xl">
+            Dica para o terapeuta
+          </button>
+        </div>
+        {scoreNote && <div className="mt-4 text-sm text-gray-600">{scoreNote}</div>}
+      </motion.div>
+    )}
+
+    {step === 1 && (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <h2 className="text-lg font-bold mb-3">Cenário</h2>
+        <div className="p-4 bg-indigo-50 rounded-lg mb-4">
+          <p className="text-gray-800">{scenarioText}</p>
+        </div>
+        <p className="mb-3 text-gray-700">O que você acha que o personagem está sentindo agora?</p>
+        <div className="grid grid-cols-2 gap-3">
+          {emotions.map((em) => (
+            <motion.button key={em.id} whileTap={{ scale: 0.97 }} onClick={() => handleChoose(em)} className="flex items-center gap-3 p-3 bg-white rounded-xl border hover:shadow-md">
+              <div className="text-2xl">{em.emoji}</div>
+              <div className="text-left">
+                <div className="font-semibold">{em.label}</div>
+                <div className="text-sm text-gray-500">{em.hint}</div>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
+    )}
+
+    {step === 2 && selectedEmotion && (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <h2 className="text-lg font-bold mb-3">Reações no corpo</h2>
+        <p className="text-gray-700 mb-3">Escolha qual dessas reações combina com a emoção <strong>{selectedEmotion.label}</strong>:</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          {bodyReactions[selectedEmotion.id].map((r) => (
+            <motion.button key={r} whileTap={{ scale: 0.98 }} onClick={() => handleBodyChoice(r)} className="p-3 bg-white rounded-lg border text-left">
+              {r}
+            </motion.button>
+          ))}
+        </div>
+
+        <div className="mt-4">
+          <button onClick={() => { setStep(1); setSelectedEmotion(null); playClick(); }} className="px-4 py-2 rounded-lg border">Voltar</button>
+        </div>
+
+        {scoreNote && <div className="mt-4 text-sm text-gray-600">{scoreNote}</div>}
+      </motion.div>
+    )}
+
+    {step === 3 && (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <h2 className="text-lg font-bold mb-3">Reflexão</h2>
+        <p className="text-gray-700 mb-3">Agora, descreva em uma ou duas frases por que você acha que o personagem sente <strong>{selectedEmotion.label}</strong>. Seja honesto — você está no personagem.</p>
+        <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={4} className="w-full p-3 rounded-lg border mb-3" placeholder="Escreva aqui..." />
+        <div className="flex gap-2">
+          <button onClick={handleExplain} className="px-5 py-2 bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-lg">Enviar reflexão</button>
+          <button onClick={() => { setStep(2); setExplanation(""); playClick(); }} className="px-5 py-2 border rounded-lg">Escolher outra emoção</button>
+        </div>
+        {scoreNote && <div className="mt-3 text-sm text-gray-600">{scoreNote}</div>}
+      </motion.div>
+    )}
+
+    {step === 4 && (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <h2 className="text-lg font-bold mb-3">Feedback do jogo</h2>
+        <div className="p-3 bg-yellow-50 rounded-lg mb-3">
+          <p className="text-gray-800">Você disse: <em>"{explanation}"</em></p>
+          <p className="mt-2 text-gray-700">Possível leitura: <strong>{selectedEmotion.label}</strong> — observe sinais no corpo e nos pensamentos. A psicóloga pode perguntar: "O que na situação fez você pensar nisso?"</p>
+        </div>
+
+        <div className="flex gap-3">
+          <button onClick={handleFinish} className="px-5 py-2 bg-gradient-to-r from-pink-500 to-indigo-500 text-white rounded-lg">Concluir fase</button>
+          <button onClick={() => { setStep(3); playClick(); }} className="px-5 py-2 border rounded-lg">Editar resposta</button>
+        </div>
+
+        {scoreNote && <div className="mt-3 text-sm text-gray-600">{scoreNote}</div>}
+      </motion.div>
+    )}
+
+    {step === 5 && (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <h2 className="text-lg font-bold mb-3">Fim da fase — Vergonha</h2>
+        <p className="text-gray-700 mb-4">Parabéns — você completou a fase. A psicóloga pode explorar: situações reais do adolescente, estratégias de regulação e alternativas de comportamento.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="p-3 bg-white rounded-lg border">
+            <h3 className="font-semibold">Sugestões para a psicóloga</h3>
+            <ul className="list-disc pl-5 mt-2 text-sm text-gray-600">
+              <li>Explorar evidências: o que me fez pensar que riam de mim?</li>
+              <li>Relacionar sensações físicas com emoção.</li>
+              <li>Praticar técnicas breves de regulação (respiração, ancoragem).</li>
+            </ul>
+          </div>
+          <div className="p-3 bg-white rounded-lg border">
+            <h3 className="font-semibold">Registro rápido</h3>
+            <p className="text-sm text-gray-600">Emoção escolhida: <strong>{selectedEmotion?.label}</strong></p>
+            <p className="text-sm text-gray-600">Reflexão do jogador: <em>{explanation}</em></p>
+          </div>
+        </div>
+
+        <div className="mt-4 flex gap-3">
+          <button onClick={() => { setStep(0); setSelectedEmotion(null); setExplanation(""); playClick(); }} className="px-4 py-2 border rounded-lg">Reiniciar protótipo</button>
+          <button onClick={() => { /* aqui poderia avançar para próxima emoção em versão completa */ playSoftChime(); }} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Voltar ao menu</button>
+        </div>
+      </motion.div>
+    )}
+
+    <footer className="mt-6 text-xs text-gray-400">Protótipo — entregue para uso em sessão clínica. Personalize cenários e emoções conforme necessidade.</footer>
+  </div>
+</div>
+
+); }
